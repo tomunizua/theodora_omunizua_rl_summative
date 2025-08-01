@@ -4,6 +4,14 @@
 
 This project implements a comprehensive Reinforcement Learning (RL) system for training an intelligent agent to sort recyclable items on a conveyor belt. The agent learns to classify and sort different types of waste (Paper, Plastic, Organic, Metal, Non-recyclable) into appropriate bins while maximizing efficiency and minimizing errors.
 
+## 🎮 Interactive Model Testing
+
+The project includes an interactive testing interface (`play.py`) that allows you to:
+- **Watch trained models in action** with real-time visualization
+- **Test different algorithms** (DQN, PPO, A2C) by changing the model path
+- **See decision-making process** with color-coded action feedback
+- **Monitor performance** with episode rewards and termination reasons
+
 ## Project Structure
 
 ```
@@ -19,6 +27,7 @@ project_root/
 │   └── pg/                      # Policy gradient models
 ├── results/                     # Training results and plots
 ├── main.py                      # Main entry point for experiments
+├── play.py                      # Interactive model testing interface
 ├── requirements.txt             # Project dependencies
 └── README.md                    # This file
 ```
@@ -26,10 +35,13 @@ project_root/
 ## Environment Design
 
 ### State Space
-- **Item Type**: 5 types (Paper, Plastic, Organic, Metal, Non-recyclable)
-- **Conveyor Speed**: 3 levels (Slow, Medium, Fast)
-- **Item Position**: Position on conveyor belt (0-9)
-- **Time Remaining**: Steps left in current batch
+- **Confidence Vector**: 4-dimensional vector representing classification confidence for each material type
+  - Paper confidence (0.0 - 1.0)
+  - Plastic confidence (0.0 - 1.0)
+  - Organic confidence (0.0 - 1.0)
+  - Metal confidence (0.0 - 1.0)
+- **Dynamic Bin Assignment**: Bins are randomly shuffled each episode to prevent position memorization
+- **Item Timeout**: Each item has 80 steps to be processed before automatic timeout
 
 ### Action Space (Discrete)
 - **0**: Sort to Bin A (Paper)
@@ -37,15 +49,18 @@ project_root/
 - **2**: Sort to Bin C (Organic)
 - **3**: Sort to Bin D (Metal)
 - **4**: Discard (Non-recyclable)
-- **5**: Wait (No action)
+- **5**: Scan (Continue observing item)
 
 ### Reward System
-- **+5**: Correct sorting
-- **-5**: Wrong sorting
-- **-10**: Missed item (item reaches end without sorting)
-- **-1**: Waiting when item is ready to sort
-- **-2**: Invalid action (trying to sort too early)
-- **+20 × efficiency**: Batch completion bonus
+- **+50**: Confident correct sorting (high confidence + correct bin)
+- **+30**: Uncertain correct sorting (low confidence + correct bin)
+- **+20**: Correct discard (low confidence item)
+- **+8**: Wrong sort with low confidence (exploration bonus)
+- **+2**: Wrong sort with high confidence (small exploration bonus)
+- **+1**: Participation reward for any sorting action
+- **-0.2**: Time penalty for scanning (encourages decisive action)
+- **-10**: False discard (discarding sortable item)
+- **-15**: Item timeout penalty (missed sort)
 
 ## Implemented Algorithms
 
@@ -69,11 +84,15 @@ project_root/
 
 ### Advanced Visualization
 - **Real-time Pygame rendering** with smooth animations
-- **Conveyor belt movement** with speed-dependent animation
-- **Item identification** with emoji indicators
-- **Real-time statistics** display
-- **Action feedback** with color-coded rewards
-- **Progress tracking** with visual progress bars
+- **Conveyor belt movement** with realistic item progression
+- **Item identification** with material type indicators (P, PL, O, M, D)
+- **Real-time statistics** display with sorting metrics
+- **Smart action feedback** with color-coded performance:
+  - 🟢 **Green**: Correct sorts (high rewards 30+)
+  - 🟡 **Yellow**: Uncertain actions (medium rewards 10-29)
+  - 🔴 **Red**: Wrong sorts or penalties (low/negative rewards)
+- **Progress tracking** with synchronized progress bars
+- **Confidence vector** visualization for decision transparency
 
 ### Comprehensive Training
 - **Multiple algorithm variants** for comparison
@@ -131,9 +150,63 @@ python main.py --mode demo
 python main.py --mode visualize
 ```
 
+#### Interactive Model Testing
+```bash
+python play.py
+```
+
 #### Custom Training Duration
 ```bash
 python main.py --mode train --timesteps 100000
+```
+
+## 🎯 Interactive Model Testing (play.py)
+
+The `play.py` script provides an interactive interface to test and visualize trained models:
+
+### Features
+- **Real-time model testing** with visual feedback
+- **Configurable model selection** - easily switch between different trained models
+- **Episode-by-episode results** with rewards and termination reasons
+- **Color-coded action feedback** showing model performance
+- **Synchronized item movement** with proper material type display
+
+### Configuration
+Edit the model configuration in `play.py`:
+```python
+# 🎯 MODEL CONFIGURATION - CHANGE THESE TO TEST DIFFERENT MODELS
+self.model_path = 'models/dqn/dqn_less_optimized.zip'  # ← CHANGE THIS PATH
+self.model_type = 'DQN'  # ← CHANGE THIS TYPE: 'DQN', 'PPO', 'A2C'
+```
+
+### Available Models
+- **DQN Models**: `models/dqn/dqn_final.zip`, `models/dqn/dqn_optimized.zip`, `models/dqn/dqn_exploration.zip`
+- **PPO Models**: `models/pg/ppo/ppo_final.zip`, `models/pg/ppo_optimized/ppo_optimized.zip`
+- **A2C Models**: `models/pg/a2c/a2c_final.zip`, `models/pg/a2c_optimized/a2c_optimized.zip`
+- **REINFORCE**: `models/pg/reinforce/reinforce_final.zip`
+
+### Controls
+- **ESC key** or **close window** to exit
+- **Automatic progression** through 3 episodes
+- **Real-time statistics** and performance metrics
+
+### Sample Output
+```
+🚀 Recycling Sorting Agent - Model Testing
+==================================================
+🤖 Testing Model: DQN
+📁 Path: models/dqn/dqn_less_optimized.zip
+
+ Loaded DQN model from: models/dqn/dqn_less_optimized.zip
+🎮 Running 3 episodes...
+
+Episode 1: 51.0 (Ended: Quality control failure: 8 wrong sorts (max: 8))
+Episode 2: 94.3 (Ended: Quality control failure: 8 wrong sorts (max: 8))
+Episode 3: 127.8 (Ended: Bin Paper reached capacity (15 items))
+
+📊 Results:
+  Cumulative Reward: 273.1
+  Average Reward: 91.0
 ```
 
 ### Individual Training Scripts
@@ -184,10 +257,12 @@ The project provides comprehensive comparison of:
 ## Technical Details
 
 ### Environment Specifications
-- **Observation Space**: Box(4,) - [item_type, speed, position, time_remaining]
-- **Action Space**: Discrete(6) - 6 possible actions
-- **Episode Length**: Variable (batch-based)
-- **Reward Range**: [-10, +25] approximately
+- **Observation Space**: Box(4,) - Confidence vector for material classification
+- **Action Space**: Discrete(6) - 6 possible actions (4 bins + discard + scan)
+- **Episode Length**: Variable (ends when bin reaches capacity or too many errors)
+- **Reward Range**: [-15, +51] with exploration bonuses
+- **Item Timeout**: 80 steps per item (realistic conveyor timing)
+- **Quality Control**: Maximum 8 wrong sorts before episode termination
 
 ### Training Parameters
 - **Default Timesteps**: 50,000 per algorithm

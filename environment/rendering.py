@@ -9,7 +9,6 @@ class RecyclingSortingRenderer:
     Pygame-based renderer for the Recycling Sorting Environment
     - Items move smoothly along the conveyor belt
     - Gradient and shadow visuals
-    - Bin shuffling between episodes
     - Cooler color tones
     """
     
@@ -227,16 +226,25 @@ class RecyclingSortingRenderer:
         self.screen.blit(item_text, (item_x - item_text.get_width() // 2, item_y - item_text.get_height() // 2))
     
     def _update_item_progress(self, env_info: Dict[str, Any], action: Optional[int]):
-        # Move item smoothly if it's still active
+        # Synchronize with environment timer instead of using internal speed
         timeout_remaining = env_info.get('item_timeout_remaining', self.item_timeout)
+        item_timeout = env_info.get('item_timeout', self.item_timeout)
         
-        # Item should only move if it hasn't timed out and it's still marked as moving
-        if self.item_moving and timeout_remaining > 0:
-            self.item_progress += self.item_speed
-            # Cap progress at 1.0 and stop moving if reached
-            if self.item_progress >= 1.0:
-                self.item_progress = 1.0
-                self.item_moving = False
+        # Calculate progress based on environment timer
+        if timeout_remaining > 0:
+            self.item_progress = 1.0 - (timeout_remaining / item_timeout)
+            self.item_moving = True
+        else:
+            # Item has timed out
+            self.item_progress = 1.0
+            self.item_moving = False
+            
+        # Only reset for new item when the current item has been fully processed
+        # Don't reset immediately when action is taken - wait for item to finish moving
+        if action is not None and (self.item_progress >= 1.0 or timeout_remaining <= 0):
+            # Item has reached the end or timed out, reset for new item
+            self.item_progress = 0.0
+            self.item_moving = True
     
     def _draw_bin_shadow(self, rect):
         """Draw a soft shadow for bins"""
@@ -346,8 +354,22 @@ class RecyclingSortingRenderer:
         action_x = self.screen_width // 2
         action_y = 80
         
-        # Use cooler tones for feedback
-        color = self.SAGE_GREEN if reward and reward > 0 else self.MUTED_RED if reward and reward < 0 else self.LIGHT_GRAY
+        # Determine color based on reward value and action type
+        # High rewards (30+) = Green (correct sort)
+        # Medium rewards (10-29) = Yellow (uncertain/exploration)
+        # Low positive rewards (1-9) = Red (wrong sort with exploration bonus)
+        # Negative rewards = Red (penalties)
+        if reward is None:
+            color = self.LIGHT_GRAY
+        elif reward >= 30:
+            color = self.SAGE_GREEN  # Correct sort
+        elif reward >= 10:
+            color = (255, 255, 0)  # Yellow for medium rewards
+        elif reward > 0:
+            color = self.MUTED_RED  # Wrong sort (still gets exploration bonus)
+        else:
+            color = self.MUTED_RED  # Negative rewards (penalties)
+            
         pygame.draw.rect(self.screen, color, (action_x - 60, action_y - 14, 120, 28))
         pygame.draw.rect(self.screen, self.DARK_GRAY, (action_x - 60, action_y - 14, 120, 28), 1)
         
@@ -366,7 +388,7 @@ class RecyclingSortingRenderer:
         
         bar_x = 20
         bar_y = 450
-        bar_width = 180
+        bar_width = 160  # Match the time left bar width
         bar_height = 12
         
         pygame.draw.rect(self.screen, self.LIGHT_GRAY, (bar_x, bar_y, bar_width, bar_height))
