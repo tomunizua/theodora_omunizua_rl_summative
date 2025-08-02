@@ -26,8 +26,8 @@ class ModelPlayer:
     
     def __init__(self):
         # 🎯 MODEL CONFIGURATION - CHANGE THESE TO TEST DIFFERENT MODELS
-        self.model_path = 'models/dqn/dqn_less_optimized.zip'  # ← CHANGE THIS PATH
-        self.model_type = 'DQN'  # ← CHANGE THIS TYPE: 'DQN', 'PPO', 'A2C'
+        self.model_path = 'models/pg/ppo/ppo_final.zip'  # ← CHANGE THIS PATH
+        self.model_type = 'PPO'  # ← CHANGE THIS TYPE: 'DQN', 'PPO', 'A2C'
         
         # Action and bin names for display
         self.action_names = ['Paper', 'Plastic', 'Organic', 'Metal', 'Discard', 'Missed']

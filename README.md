@@ -40,7 +40,6 @@ project_root/
   - Plastic confidence (0.0 - 1.0)
   - Organic confidence (0.0 - 1.0)
   - Metal confidence (0.0 - 1.0)
-- **Dynamic Bin Assignment**: Bins are randomly shuffled each episode to prevent position memorization
 - **Item Timeout**: Each item has 80 steps to be processed before automatic timeout
 
 ### Action Space (Discrete)
@@ -111,7 +110,7 @@ project_root/
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/theodora_omunizua_rl_summative.git
    cd theodora_omunizua_rl_summative
    ```
 
@@ -160,18 +159,7 @@ python play.py
 python main.py --mode train --timesteps 100000
 ```
 
-## 🎯 Interactive Model Testing (play.py)
-
-The `play.py` script provides an interactive interface to test and visualize trained models:
-
-### Features
-- **Real-time model testing** with visual feedback
-- **Configurable model selection** - easily switch between different trained models
-- **Episode-by-episode results** with rewards and termination reasons
-- **Color-coded action feedback** showing model performance
-- **Synchronized item movement** with proper material type display
-
-### Configuration
+## 🎯 Interactive Model Testing (play.py) Configuration
 Edit the model configuration in `play.py`:
 ```python
 # 🎯 MODEL CONFIGURATION - CHANGE THESE TO TEST DIFFERENT MODELS
@@ -180,7 +168,7 @@ self.model_type = 'DQN'  # ← CHANGE THIS TYPE: 'DQN', 'PPO', 'A2C'
 ```
 
 ### Available Models
-- **DQN Models**: `models/dqn/dqn_final.zip`, `models/dqn/dqn_optimized.zip`, `models/dqn/dqn_exploration.zip`
+- **DQN Models**: `models/dqn/dqn_final.zip`, `models/dqn/dqn_optimized.zip`, `models/dqn/dqn_les_optimized.zip`
 - **PPO Models**: `models/pg/ppo/ppo_final.zip`, `models/pg/ppo_optimized/ppo_optimized.zip`
 - **A2C Models**: `models/pg/a2c/a2c_final.zip`, `models/pg/a2c_optimized/a2c_optimized.zip`
 - **REINFORCE**: `models/pg/reinforce/reinforce_final.zip`
@@ -209,30 +197,6 @@ Episode 3: 127.8 (Ended: Bin Paper reached capacity (15 items))
   Average Reward: 91.0
 ```
 
-### Individual Training Scripts
-
-#### DQN Training
-```bash
-cd training
-python dqn_training.py
-```
-
-#### Policy Gradient Training
-```bash
-cd training
-python pg_training.py
-```
-
-## Expected Results
-
-### Performance Metrics
-The system tracks and compares:
-- **Average Reward**: Total reward per episode
-- **Sorting Efficiency**: Percentage of correct sorts
-- **Correct Sorts**: Number of items correctly classified
-- **Wrong Sorts**: Number of misclassified items
-- **Missed Items**: Items that reached the end unsorted
-
 ### Algorithm Comparison
 The project provides comprehensive comparison of:
 - **Value-based vs Policy-based** methods
@@ -248,44 +212,6 @@ The project provides comprehensive comparison of:
 - `models/*/training_results.png`: Individual algorithm training curves
 - `models/*/best_model/`: Best performing models for each variant
 
-### Model Files
-- `models/dqn/`: DQN model variants
-- `models/pg/ppo/`: PPO models
-- `models/pg/a2c/`: A2C models
-- `models/pg/reinforce/`: REINFORCE models
-
-## Technical Details
-
-### Environment Specifications
-- **Observation Space**: Box(4,) - Confidence vector for material classification
-- **Action Space**: Discrete(6) - 6 possible actions (4 bins + discard + scan)
-- **Episode Length**: Variable (ends when bin reaches capacity or too many errors)
-- **Reward Range**: [-15, +51] with exploration bonuses
-- **Item Timeout**: 80 steps per item (realistic conveyor timing)
-- **Quality Control**: Maximum 8 wrong sorts before episode termination
-
-### Training Parameters
-- **Default Timesteps**: 50,000 per algorithm
-- **Evaluation Frequency**: Every 1,000 steps
-- **Checkpoint Frequency**: Every 5,000 steps
-- **Evaluation Episodes**: 10 per model
-
-### Hardware Requirements
-- **Minimum**: CPU-only training (slower)
-- **Recommended**: GPU with CUDA support
-- **Memory**: 4GB RAM minimum, 8GB recommended
-
-## Customization
-
-### Environment Modifications
-- Adjust `batch_size` and `conveyor_length` in environment initialization
-- Modify reward structure in `_calculate_reward()` method
-- Change item distribution in `_generate_item()` method
-
-### Algorithm Tuning
-- Modify hyperparameters in training scripts
-- Add new algorithm variants
-- Implement custom exploration strategies
 
 ### Visualization Customization
 - Adjust colors and layout in `rendering.py`
@@ -313,21 +239,13 @@ The project provides comprehensive comparison of:
    - Adjust learning rates
    - Modify exploration parameters
 
-## Contributing
-
-This project is designed for educational purposes. Feel free to:
-- Experiment with different reward structures
-- Implement additional RL algorithms
-- Enhance the visualization system
-- Optimize hyperparameters for better performance
-
 ## License
 
 This project is created for educational purposes as part of the ML Techniques II course at African Leadership University.
 
-## Contact
+## Contributors
 
-For questions or issues related to this project, please refer to the course instructor or create an issue in the repository.
+Theodora Omunizua
 
 ---
 
